@@ -1,1 +1,1 @@
-Some of my skills that I reuse.
+Some skills I like to reuse.

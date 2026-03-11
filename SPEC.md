@@ -9,6 +9,10 @@ Other references:
 https://developers.cloudflare.com/browser-rendering/rest-api/crawl-endpoint/
 https://api.cloudflare.com/client/v4/accounts/<account_id>/browser-rendering/crawl
 
+Skills we want to crawl:
+
+- https://alchemy.run
+
 --- only edit below this line ---
 
 ## Agent Spec:

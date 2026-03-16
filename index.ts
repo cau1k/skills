@@ -5,7 +5,7 @@ import { generateCodexAppServerSkill } from "./src/codex-app-server.ts";
 
 type Command = "all" | "alchemy-run" | "codex-app-server";
 
-const outputRoot = resolve(import.meta.dir, "@skills");
+const outputRoot = resolve(import.meta.dir, "skills");
 const command = (process.argv[2] ?? "all") as Command;
 
 const usage = [

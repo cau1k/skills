@@ -1,0 +1,37 @@
+# API overview
+
+- `thread/start` - create a new thread; emits `thread/started` and automatically subscribes you to turn/item events for that thread.
+- `thread/resume` - reopen an existing thread by id so later `turn/start` calls append to it.
+- `thread/fork` - fork a thread into a new thread id by copying stored history; emits `thread/started` for the new thread.
+- `thread/read` - read a stored thread by id without resuming it; set `includeTurns` to return full turn history. Returned `thread` objects include runtime `status`.
+- `thread/list` - page through stored thread logs; supports cursor-based pagination plus `modelProviders`, `sourceKinds`, `archived`, and `cwd` filters. Returned `thread` objects include runtime `status`.
+- `thread/loaded/list` - list the thread ids currently loaded in memory.
+- `thread/archive` - move a thread's log file into the archived directory; returns `{}` on success and emits `thread/archived`.
+- `thread/unsubscribe` - unsubscribe this connection from thread turn/item events. If this was the last subscriber, the server unloads the thread and emits `thread/closed`.
+- `thread/unarchive` - restore an archived thread rollout back into the active sessions directory; returns the restored `thread` and emits `thread/unarchived`.
+- `thread/status/changed` - notification emitted when a loaded thread's runtime `status` changes.
+- `thread/compact/start` - trigger conversation history compaction for a thread; returns `{}` immediately while progress streams via `turn/*` and `item/*` notifications.
+- `thread/rollback` - drop the last N turns from the in-memory context and persist a rollback marker; returns the updated `thread`.
+- `turn/start` - add user input to a thread and begin Codex generation; responds with the initial `turn` and streams events. For `collaborationMode`, `settings.developer_instructions: null` means "use built-in instructions for the selected mode."
+- `turn/steer` - append user input to the active in-flight turn for a thread; returns the accepted `turnId`.
+- `turn/interrupt` - request cancellation of an in-flight turn; success is `{}` and the turn ends with `status: "interrupted"`.
+- `review/start` - kick off the Codex reviewer for a thread; emits `enteredReviewMode` and `exitedReviewMode` items.
+- `command/exec` - run a single command under the server sandbox without starting a thread/turn.
+- `model/list` - list available models (set `includeHidden: true` to include entries with `hidden: true`) with effort options, optional `upgrade`, and `inputModalities`.
+- `experimentalFeature/list` - list feature flags with lifecycle stage metadata and cursor pagination.
+- `collaborationMode/list` - list collaboration mode presets (experimental, no pagination).
+- `skills/list` - list skills for one or more `cwd` values (supports `forceReload` and optional `perCwdExtraUserRoots`).
+- `app/list` - list available apps (connectors) with pagination plus accessibility/enabled metadata.
+- `skills/config/write` - enable or disable skills by path.
+- `mcpServer/oauth/login` - start an OAuth login for a configured MCP server; returns an authorization URL and emits `mcpServer/oauthLogin/completed` on completion.
+- `tool/requestUserInput` - prompt the user with 1-3 short questions for a tool call (experimental); questions can set `isOther` for a free-form option.
+- `config/mcpServer/reload` - reload MCP server configuration from disk and queue a refresh for loaded threads.
+- `mcpServerStatus/list` - list MCP servers, tools, resources, and auth status (cursor + limit pagination).
+- `windowsSandbox/setupStart` - start Windows sandbox setup for `elevated` or `unelevated` mode; returns quickly and later emits `windowsSandbox/setupCompleted`.
+- `feedback/upload` - submit a feedback report (classification + optional reason/logs + conversation id, plus optional `extraLogFiles` attachments).
+- `config/read` - fetch the effective configuration on disk after resolving configuration layering.
+- `externalAgentConfig/detect` - detect migratable external-agent artifacts with `includeHome` and optional `cwds`; each detected item includes `cwd` (`null` for home).
+- `externalAgentConfig/import` - apply selected external-agent migration items by passing explicit `migrationItems` with `cwd` (`null` for home).
+- `config/value/write` - write a single configuration key/value to the user's `config.toml` on disk.
+- `config/batchWrite` - apply configuration edits atomically to the user's `config.toml` on disk.
+- `configRequirements/read` - fetch requirements from `requirements.toml` and/or MDM, including allow-lists, pinned `featureRequirements`, and residency/network requirements (or `null` if you haven't set any up).

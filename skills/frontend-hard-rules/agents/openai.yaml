@@ -1,0 +1,4 @@
+interface:
+  display_name: "Frontend Hard Rules"
+  short_description: "Guardrails for art-directed frontend work"
+  default_prompt: "Use $frontend-hard-rules to build or review this frontend page with brand-first composition and non-generic layout rules."

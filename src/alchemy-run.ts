@@ -5,9 +5,7 @@ import { tmpdir } from "node:os";
 import {
   ensureDir,
   extractFrontmatter,
-  firstParagraph,
   listFiles,
-  renderSkillMarkdown,
   resetDir,
   stripMdxImports,
   writeText,
@@ -20,12 +18,9 @@ const EXAMPLES_ROOT = "examples";
 const PROVIDERS_ROOT = join(DOCS_ROOT, "providers");
 const COMMON_DOC_PATHS = [
   join(DOCS_ROOT, "advanced"),
-  join(DOCS_ROOT, "blog"),
   join(DOCS_ROOT, "concepts"),
   join(DOCS_ROOT, "getting-started.mdx"),
   join(DOCS_ROOT, "guides"),
-  join(DOCS_ROOT, "index.md"),
-  join(DOCS_ROOT, "privacy.md"),
   join(DOCS_ROOT, "what-is-alchemy.md"),
 ];
 
@@ -70,24 +65,13 @@ export async function generateAlchemyRunSkill(
       referencePrefix: "examples",
       sourceRoot: EXAMPLES_ROOT,
     });
-    const references = [...docsReferences, ...exampleReferences].sort((a, b) =>
-      a.path.localeCompare(b.path),
-    );
+    const references = [...docsReferences, ...exampleReferences].sort();
 
-    const skillMarkdown = renderSkillMarkdown({
+    const skillMarkdown = renderAlchemySkillMarkdown({
       description:
         "Reference skill for Alchemy, the TypeScript-native infrastructure-as-code library. Use when working on `alchemy.run.ts` files, Alchemy CLI flows, provider/resource docs, concepts, guides, or example documentation mirrored from the `alchemy-run/alchemy` repository.",
-      hints: [
-        "Start with `./references/what-is-alchemy.md` and `./references/getting-started.md`.",
-        `Default provider scope: ${providers.join(", ")}.`,
-        "Load matching provider files under `./references/providers/...` for exact resource docs.",
-        "Use `./references/examples/.../README.md` when you need example app setup or deployment patterns.",
-      ],
-      intro:
-        "Alchemy docs mirrored from a sparse checkout of the upstream GitHub repository. Reference files preserve the upstream folder structure under `./references` and `./references/examples`.",
-      references,
-      source: `${REPO_URL} (${DOCS_ROOT} and ${EXAMPLES_ROOT} via sparse checkout)`,
       title: "Alchemy Run",
+      tree: renderReferenceTree(references),
     });
 
     await writeText(join(skillDir, "SKILL.md"), skillMarkdown);
@@ -153,20 +137,23 @@ async function writeReferenceFile(input: {
     input.referencePath,
   )}`.replace(/\\/g, "/");
 
-  return {
-    description:
-      parsed.attributes.description ||
-      firstParagraph(body.replace(/^#\s+.+$/m, "").trim()),
-    path: relativeReferencePath,
-  };
+  return relativeReferencePath.replace(/^\.\/references\//, "");
 }
 
 export function includeAlchemyFile(file: string, sourceDir: string, providers?: string[]) {
+  const relativePath = relative(sourceDir, file).replace(/\\/g, "/");
+  if (
+    relativePath === "index.md" ||
+    relativePath === "privacy.md" ||
+    relativePath.startsWith("blog/")
+  ) {
+    return false;
+  }
+
   if (!providers || providers.length === 0) {
     return true;
   }
 
-  const relativePath = relative(sourceDir, file).replace(/\\/g, "/");
   if (!relativePath.startsWith("providers/")) {
     return true;
   }
@@ -181,4 +168,85 @@ export function normalizeProviders(input?: string[]) {
   );
 
   return [...new Set(providers)];
+}
+
+export function renderAlchemySkillMarkdown(input: {
+  description: string;
+  title: string;
+  tree: string;
+}) {
+  return [
+    "---",
+    `name: ${SKILL_NAME}`,
+    `description: ${input.description}`,
+    "---",
+    "",
+    `# ${input.title}`,
+    "",
+    "```text",
+    input.tree,
+    "```",
+  ].join("\n");
+}
+
+export function renderReferenceTree(referencePaths: string[]) {
+  const root = createTreeNode();
+
+  for (const referencePath of referencePaths) {
+    const parts = referencePath.split("/").filter(Boolean);
+    let node = root;
+
+    for (const part of parts.slice(0, -1)) {
+      let child = node.directories.get(part);
+      if (!child) {
+        child = createTreeNode();
+        node.directories.set(part, child);
+      }
+      node = child;
+    }
+
+    const file = parts.at(-1);
+    if (file) {
+      node.files.add(file);
+    }
+  }
+
+  return ["./references/", ...renderTreeEntries(root, "")].join("\n");
+}
+
+type TreeNode = {
+  directories: Map<string, TreeNode>;
+  files: Set<string>;
+};
+
+function createTreeNode(): TreeNode {
+  return {
+    directories: new Map(),
+    files: new Set(),
+  };
+}
+
+function renderTreeEntries(node: TreeNode, prefix: string): string[] {
+  const entries = [
+    ...[...node.directories.entries()]
+      .sort(([left], [right]) => left.localeCompare(right))
+      .map(([name, child]) => ({ child, isDirectory: true, name })),
+    ...[...node.files].sort((left, right) => left.localeCompare(right)).map((name) => ({
+      isDirectory: false,
+      name,
+    })),
+  ];
+
+  return entries.flatMap((entry, index) => {
+    const isLast = index === entries.length - 1;
+    const branch = isLast ? "└── " : "├── ";
+    const line = `${prefix}${branch}${entry.name}${entry.isDirectory ? "/" : ""}`;
+
+    if (!entry.isDirectory) {
+      return [line];
+    }
+
+    const childPrefix = `${prefix}${isLast ? "    " : "│   "}`;
+    return [line, ...renderTreeEntries(entry.child, childPrefix)];
+  });
 }

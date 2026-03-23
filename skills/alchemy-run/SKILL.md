@@ -46,36 +46,7 @@ Alchemy is a TypeScript-native infrastructure-as-code library. This skill mirror
 │   │   └── README.md
 │   └── prisma-postgres/
 │       └── README.md
-├── guides/
-│   ├── ci.md
-│   ├── clickhouse.md
-│   ├── cloudflare-astro.md
-│   ├── cloudflare-bun-spa.md
-│   ├── cloudflare-durable-objects.md
-│   ├── cloudflare-livestore.md
-│   ├── cloudflare-nextjs.md
-│   ├── cloudflare-nuxt.md
-│   ├── cloudflare-queue.md
-│   ├── cloudflare-r2-notifications.md
-│   ├── cloudflare-react-router.md
-│   ├── cloudflare-redwood.md
-│   ├── cloudflare-state-store.md
-│   ├── cloudflare-sveltekit.md
-│   ├── cloudflare-tanstack-start.md
-│   ├── cloudflare-tunnel.md
-│   ├── cloudflare-vitejs.md
-│   ├── cloudflare-worker.md
-│   ├── cloudflare-workflows.md
-│   ├── cloudflare.md
-│   ├── custom-resources.md
-│   ├── debugging.md
-│   ├── drizzle-d1.md
-│   ├── planetscale-drizzle.md
-│   ├── planetscale-postgres.md
-│   ├── prisma-d1.md
-│   ├── prisma-postgres.md
-│   ├── sqlite-state-store.md
-│   └── turborepo.md
+├── guides/ <- task-oriented how-to docs for setup, deployment, integrations, and debugging
 ├── providers/
 │   ├── cloudflare/
 │   │   ├── account-api-token.md

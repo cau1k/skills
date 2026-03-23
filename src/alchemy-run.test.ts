@@ -45,6 +45,8 @@ test("renderReferenceTree prints a box-drawing tree", () => {
   expect(
     renderReferenceTree([
       "concepts/cli.md",
+      "guides/ci.md",
+      "guides/cloudflare.md",
       "providers/cloudflare/worker.md",
       "providers/github/secret.md",
       "what-is-alchemy.md",
@@ -52,6 +54,7 @@ test("renderReferenceTree prints a box-drawing tree", () => {
   ).toBe(`./references/
 ├── concepts/
 │   └── cli.md
+├── guides/ <- task-oriented how-to docs for setup, deployment, integrations, and debugging
 ├── providers/
 │   ├── cloudflare/
 │   │   └── worker.md

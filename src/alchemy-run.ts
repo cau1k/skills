@@ -224,6 +224,10 @@ type TreeNode = {
   files: Set<string>;
 };
 
+const COLLAPSED_DIRECTORY_DESCRIPTIONS: Record<string, string> = {
+  guides: "task-oriented how-to docs for setup, deployment, integrations, and debugging",
+};
+
 function createTreeNode(): TreeNode {
   return {
     directories: new Map(),
@@ -231,7 +235,7 @@ function createTreeNode(): TreeNode {
   };
 }
 
-function renderTreeEntries(node: TreeNode, prefix: string): string[] {
+function renderTreeEntries(node: TreeNode, prefix: string, parentPath: string[] = []): string[] {
   const entries = [
     ...[...node.directories.entries()]
       .sort(([left], [right]) => left.localeCompare(right))
@@ -245,13 +249,23 @@ function renderTreeEntries(node: TreeNode, prefix: string): string[] {
   return entries.flatMap((entry, index) => {
     const isLast = index === entries.length - 1;
     const branch = isLast ? "└── " : "├── ";
-    const line = `${prefix}${branch}${entry.name}${entry.isDirectory ? "/" : ""}`;
+    const pathParts = [...parentPath, entry.name];
+    const directoryDescription = entry.isDirectory
+      ? describeCollapsedDirectory(pathParts)
+      : undefined;
+    const line = `${prefix}${branch}${entry.name}${entry.isDirectory ? "/" : ""}${
+      directoryDescription ? ` <- ${directoryDescription}` : ""
+    }`;
 
-    if (!entry.isDirectory) {
+    if (!entry.isDirectory || directoryDescription) {
       return [line];
     }
 
     const childPrefix = `${prefix}${isLast ? "    " : "│   "}`;
-    return [line, ...renderTreeEntries(entry.child, childPrefix)];
+    return [line, ...renderTreeEntries(entry.child, childPrefix, pathParts)];
   });
+}
+
+function describeCollapsedDirectory(pathParts: string[]) {
+  return COLLAPSED_DIRECTORY_DESCRIPTIONS[pathParts.at(-1) ?? ""];
 }

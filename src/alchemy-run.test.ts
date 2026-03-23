@@ -4,6 +4,7 @@ import {
   DEFAULT_ALCHEMY_PROVIDERS,
   includeAlchemyFile,
   normalizeProviders,
+  renderAlchemySkillMarkdown,
   renderReferenceTree,
 } from "./alchemy-run.ts";
 
@@ -57,4 +58,19 @@ test("renderReferenceTree prints a box-drawing tree", () => {
 │   └── github/
 │       └── secret.md
 └── what-is-alchemy.md`);
+});
+
+test("renderAlchemySkillMarkdown includes intro before tree", () => {
+  expect(
+    renderAlchemySkillMarkdown({
+      description: "desc",
+      intro: "Real top-level intro.",
+      title: "Alchemy Run",
+      tree: "./references/\n└── what-is-alchemy.md",
+    }),
+  ).toContain(`# Alchemy Run
+
+Real top-level intro.
+
+\`\`\`text`);
 });

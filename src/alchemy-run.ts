@@ -70,6 +70,8 @@ export async function generateAlchemyRunSkill(
     const skillMarkdown = renderAlchemySkillMarkdown({
       description:
         "Reference skill for Alchemy, the TypeScript-native infrastructure-as-code library. Use when working on `alchemy.run.ts` files, Alchemy CLI flows, provider/resource docs, concepts, guides, or example documentation mirrored from the `alchemy-run/alchemy` repository.",
+      intro:
+        "Alchemy is a TypeScript-native infrastructure-as-code library. This skill mirrors curated upstream concepts, guides, provider docs, and examples for working on `alchemy.run.ts` files, CLI flows, and Alchemy-managed infrastructure.",
       title: "Alchemy Run",
       tree: renderReferenceTree(references),
     });
@@ -172,6 +174,7 @@ export function normalizeProviders(input?: string[]) {
 
 export function renderAlchemySkillMarkdown(input: {
   description: string;
+  intro: string;
   title: string;
   tree: string;
 }) {
@@ -182,6 +185,8 @@ export function renderAlchemySkillMarkdown(input: {
     "---",
     "",
     `# ${input.title}`,
+    "",
+    input.intro,
     "",
     "```text",
     input.tree,

@@ -1,0 +1,4 @@
+interface:
+  display_name: "Context Primer"
+  short_description: "Fan out 3 repo scouts, then synthesize a primer"
+  default_prompt: "Use $context-primer to inspect this repo for my goal, send out three parallel subagents with different lenses, and return a concise primer with concrete file references and hotspots."

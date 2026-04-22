@@ -1,0 +1,4 @@
+interface:
+  display_name: "Deslop"
+  short_description: "3-agent review pass before commit"
+  default_prompt: "Use $deslop on this nearly finished change, run the three required review vectors in parallel, synthesize the feedback, and apply the worthwhile cleanup before commit."

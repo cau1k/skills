@@ -1,6 +1,6 @@
 ---
 name: parse-dont-validate
-description: Use when code validates data but discards the proof. Replace ad-hoc checks with boundary parsers and precise types that make illegal states unrepresentable.
+description: Critical for systems thinking. Use when code validates data but discards the proof. Replace ad-hoc checks with boundary parsers and precise types that make illegal states unrepresentable.
 metadata:
     source: https://lexi-lambda.github.io/blog/2019/11/05/parse-don-t-validate/
 ---

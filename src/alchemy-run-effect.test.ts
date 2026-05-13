@@ -4,6 +4,7 @@ import {
   DEFAULT_ALCHEMY_EFFECT_PROVIDERS,
   includeAlchemyRunEffectFile,
   normalizeAlchemyRunEffectProviders,
+  providerSourcePaths,
   renderAlchemyRunEffectSkillMarkdown,
   renderReferenceTree,
 } from "./alchemy-run-effect.ts";
@@ -13,9 +14,18 @@ test("normalizeAlchemyRunEffectProviders uses defaults", () => {
 });
 
 test("normalizeAlchemyRunEffectProviders dedupes and canonicalizes known providers", () => {
-  expect(normalizeAlchemyRunEffectProviders(["cloudflare", "AWS", "Cloudflare"])).toEqual([
-    "Cloudflare",
-    "AWS",
+  expect(normalizeAlchemyRunEffectProviders(["Cloudflare", "github", "cloudflare"])).toEqual([
+    "cloudflare",
+    "github",
+  ]);
+});
+
+test("providerSourcePaths maps standard providers to v2 source paths", () => {
+  expect(providerSourcePaths(["cloudflare", "github", "os", "fs", "sqlite"])).toEqual([
+    "packages/alchemy/src/Cloudflare",
+    "packages/alchemy/src/GitHub",
+    "packages/alchemy/src/Util/exec.ts",
+    "packages/alchemy/src/SQLite",
   ]);
 });
 
@@ -35,7 +45,7 @@ test("renderReferenceTree collapses broad v2 directories", () => {
       "examples/cloudflare-worker/alchemy.run.ts",
       "guides/ci.md",
       "llms.txt",
-      "providers/Cloudflare/Worker.ts",
+      "providers/cloudflare/Worker.ts",
       "tutorial/part-1.md",
     ]),
   ).toBe(`./references/

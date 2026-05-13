@@ -28,14 +28,20 @@ const COMMON_DOC_PATHS = [
 ];
 
 export const DEFAULT_ALCHEMY_EFFECT_PROVIDERS = [
-  "Cloudflare",
-  "AWS",
-  "GitHub",
-  "Axiom",
-  "Neon",
-  "Drizzle",
-  "SQLite",
+  "cloudflare",
+  "github",
+  "os",
+  "fs",
+  "sqlite",
 ] as const;
+
+const PROVIDER_SOURCE_PATHS: Record<string, string[]> = {
+  cloudflare: [join(PROVIDERS_ROOT, "Cloudflare")],
+  github: [join(PROVIDERS_ROOT, "GitHub")],
+  os: [join(PROVIDERS_ROOT, "Util", "exec.ts")],
+  fs: [],
+  sqlite: [join(PROVIDERS_ROOT, "SQLite")],
+};
 
 type GenerateAlchemyRunEffectSkillOptions = {
   providers?: string[];
@@ -55,7 +61,7 @@ export async function generateAlchemyRunEffectSkill(
 
   try {
     await Bun.$`git clone --depth=1 --filter=blob:none --sparse ${REPO_URL} ${checkoutDir}`.quiet();
-    await Bun.$`git -C ${checkoutDir} sparse-checkout set --skip-checks ${COMMON_DOC_PATHS} ${EXAMPLES_ROOT} ${providers.map((provider) => join(PROVIDERS_ROOT, provider))}`.quiet();
+    await Bun.$`git -C ${checkoutDir} sparse-checkout set --skip-checks ${COMMON_DOC_PATHS} ${EXAMPLES_ROOT} ${providerSourcePaths(providers)}`.quiet();
 
     const docsReferences = await buildMarkdownReferencesForRoot({
       checkoutDir,
@@ -159,36 +165,44 @@ async function buildProviderReferences(input: {
   providers: string[];
   referencesDir: string;
 }) {
-  const sourceRoot = join(input.checkoutDir, PROVIDERS_ROOT);
   const references: string[] = [];
 
   for (const provider of input.providers) {
-    const providerDir = join(sourceRoot, provider);
-    const files = (await listFiles(providerDir))
-      .filter((file) => /\.ts$/i.test(file))
-      .filter((file) => !relative(providerDir, file).replace(/\\/g, "/").endsWith(".test.ts"))
-      .sort();
+    for (const providerPath of PROVIDER_SOURCE_PATHS[provider] ?? []) {
+      const sourcePath = join(input.checkoutDir, providerPath);
+      const files = await listProviderFiles(sourcePath);
+      const sourceDir = sourcePath.endsWith(".ts") ? dirname(sourcePath) : sourcePath;
 
-    references.push(
-      ...(await Promise.all(
-        files.map((file) =>
-          writeReferenceFile({
-            file,
-            referencePath: join(
-              input.referencesDir,
-              "providers",
-              provider,
-              relative(providerDir, file),
-            ),
-            referencesDir: input.referencesDir,
-            sourceDir: providerDir,
-          }),
-        ),
-      )),
-    );
+      references.push(
+        ...(await Promise.all(
+          files.map((file) =>
+            writeReferenceFile({
+              file,
+              referencePath: join(
+                input.referencesDir,
+                "providers",
+                provider,
+                relative(sourceDir, file),
+              ),
+              referencesDir: input.referencesDir,
+              sourceDir,
+            }),
+          ),
+        )),
+      );
+    }
   }
 
   return references;
+}
+
+async function listProviderFiles(sourcePath: string) {
+  const files = sourcePath.endsWith(".ts") ? [sourcePath] : await listFiles(sourcePath);
+
+  return files
+    .filter((file) => /\.ts$/i.test(file))
+    .filter((file) => !file.endsWith(".test.ts"))
+    .sort();
 }
 
 async function writeReferenceFile(input: {
@@ -237,18 +251,19 @@ export function includeAlchemyRunEffectFile(file: string, sourceDir: string) {
 
 export function normalizeAlchemyRunEffectProviders(input?: string[]) {
   const providers = input && input.length > 0 ? input : [...DEFAULT_ALCHEMY_EFFECT_PROVIDERS];
-  const defaultProviderByLowercase = new Map(
-    DEFAULT_ALCHEMY_EFFECT_PROVIDERS.map((provider) => [provider.toLowerCase(), provider]),
-  );
 
   return [
     ...new Set(
       providers
         .map((provider) => provider.trim())
         .filter(Boolean)
-        .map((provider) => defaultProviderByLowercase.get(provider.toLowerCase()) ?? provider),
+        .map((provider) => provider.toLowerCase()),
     ),
   ];
+}
+
+export function providerSourcePaths(providers: string[]) {
+  return providers.flatMap((provider) => PROVIDER_SOURCE_PATHS[provider] ?? []);
 }
 
 export function renderAlchemyRunEffectSkillMarkdown(input: { tree: string }) {

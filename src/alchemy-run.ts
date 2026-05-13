@@ -224,6 +224,17 @@ type TreeNode = {
   files: Set<string>;
 };
 
+type TreeEntry =
+  | {
+      child: TreeNode;
+      isDirectory: true;
+      name: string;
+    }
+  | {
+      isDirectory: false;
+      name: string;
+    };
+
 const COLLAPSED_DIRECTORY_DESCRIPTIONS: Record<string, string> = {
   guides: "task-oriented how-to docs for setup, deployment, integrations, and debugging",
 };
@@ -236,12 +247,12 @@ function createTreeNode(): TreeNode {
 }
 
 function renderTreeEntries(node: TreeNode, prefix: string, parentPath: string[] = []): string[] {
-  const entries = [
+  const entries: TreeEntry[] = [
     ...[...node.directories.entries()]
       .sort(([left], [right]) => left.localeCompare(right))
-      .map(([name, child]) => ({ child, isDirectory: true, name })),
+      .map(([name, child]) => ({ child, isDirectory: true as const, name })),
     ...[...node.files].sort((left, right) => left.localeCompare(right)).map((name) => ({
-      isDirectory: false,
+      isDirectory: false as const,
       name,
     })),
   ];

@@ -17,6 +17,7 @@ const SKILL_NAME = "alchemy-run-effect";
 const DOCS_ROOT = "website/src/content/docs";
 const EXAMPLES_ROOT = "examples";
 const LLMS_TXT = "website/public/llms.txt";
+const PROVIDERS_ROOT = "packages/alchemy/src";
 const COMMON_DOC_PATHS = [
   join(DOCS_ROOT, "concepts"),
   join(DOCS_ROOT, "getting-started.mdx"),
@@ -26,17 +27,35 @@ const COMMON_DOC_PATHS = [
   LLMS_TXT,
 ];
 
-export async function generateAlchemyRunEffectSkill(outputRoot: string) {
+export const DEFAULT_ALCHEMY_EFFECT_PROVIDERS = [
+  "Cloudflare",
+  "AWS",
+  "GitHub",
+  "Axiom",
+  "Neon",
+  "Drizzle",
+  "SQLite",
+] as const;
+
+type GenerateAlchemyRunEffectSkillOptions = {
+  providers?: string[];
+};
+
+export async function generateAlchemyRunEffectSkill(
+  outputRoot: string,
+  options: GenerateAlchemyRunEffectSkillOptions = {},
+) {
   const skillDir = join(outputRoot, SKILL_NAME);
   const referencesDir = join(skillDir, "references");
   const checkoutDir = await mkdtemp(join(tmpdir(), "alchemy-run-effect-skill-"));
+  const providers = normalizeAlchemyRunEffectProviders(options.providers);
 
   await resetDir(skillDir);
   await ensureDir(referencesDir);
 
   try {
     await Bun.$`git clone --depth=1 --filter=blob:none --sparse ${REPO_URL} ${checkoutDir}`.quiet();
-    await Bun.$`git -C ${checkoutDir} sparse-checkout set --skip-checks ${COMMON_DOC_PATHS} ${EXAMPLES_ROOT}`.quiet();
+    await Bun.$`git -C ${checkoutDir} sparse-checkout set --skip-checks ${COMMON_DOC_PATHS} ${EXAMPLES_ROOT} ${providers.map((provider) => join(PROVIDERS_ROOT, provider))}`.quiet();
 
     const docsReferences = await buildMarkdownReferencesForRoot({
       checkoutDir,
@@ -48,6 +67,11 @@ export async function generateAlchemyRunEffectSkill(outputRoot: string) {
       checkoutDir,
       referencesDir,
     });
+    const providerReferences = await buildProviderReferences({
+      checkoutDir,
+      providers,
+      referencesDir,
+    });
 
     await writeReferenceFile({
       file: join(checkoutDir, LLMS_TXT),
@@ -56,7 +80,12 @@ export async function generateAlchemyRunEffectSkill(outputRoot: string) {
       sourceDir: dirname(join(checkoutDir, LLMS_TXT)),
     });
 
-    const references = [...docsReferences, ...exampleReferences, "llms.txt"].sort();
+    const references = [
+      ...docsReferences,
+      ...exampleReferences,
+      ...providerReferences,
+      "llms.txt",
+    ].sort();
     const skillMarkdown = renderAlchemyRunEffectSkillMarkdown({
       tree: renderReferenceTree(references),
     });
@@ -125,6 +154,43 @@ async function buildExampleReferences(input: { checkoutDir: string; referencesDi
   );
 }
 
+async function buildProviderReferences(input: {
+  checkoutDir: string;
+  providers: string[];
+  referencesDir: string;
+}) {
+  const sourceRoot = join(input.checkoutDir, PROVIDERS_ROOT);
+  const references: string[] = [];
+
+  for (const provider of input.providers) {
+    const providerDir = join(sourceRoot, provider);
+    const files = (await listFiles(providerDir))
+      .filter((file) => /\.ts$/i.test(file))
+      .filter((file) => !relative(providerDir, file).replace(/\\/g, "/").endsWith(".test.ts"))
+      .sort();
+
+    references.push(
+      ...(await Promise.all(
+        files.map((file) =>
+          writeReferenceFile({
+            file,
+            referencePath: join(
+              input.referencesDir,
+              "providers",
+              provider,
+              relative(providerDir, file),
+            ),
+            referencesDir: input.referencesDir,
+            sourceDir: providerDir,
+          }),
+        ),
+      )),
+    );
+  }
+
+  return references;
+}
+
 async function writeReferenceFile(input: {
   file: string;
   referencePath: string;
@@ -169,6 +235,22 @@ export function includeAlchemyRunEffectFile(file: string, sourceDir: string) {
   );
 }
 
+export function normalizeAlchemyRunEffectProviders(input?: string[]) {
+  const providers = input && input.length > 0 ? input : [...DEFAULT_ALCHEMY_EFFECT_PROVIDERS];
+  const defaultProviderByLowercase = new Map(
+    DEFAULT_ALCHEMY_EFFECT_PROVIDERS.map((provider) => [provider.toLowerCase(), provider]),
+  );
+
+  return [
+    ...new Set(
+      providers
+        .map((provider) => provider.trim())
+        .filter(Boolean)
+        .map((provider) => defaultProviderByLowercase.get(provider.toLowerCase()) ?? provider),
+    ),
+  ];
+}
+
 export function renderAlchemyRunEffectSkillMarkdown(input: { tree: string }) {
   return [
     "---",
@@ -182,7 +264,7 @@ export function renderAlchemyRunEffectSkillMarkdown(input: { tree: string }) {
     "",
     "Start with `./references/llms.txt` when choosing a page. It is the docs navigation index and names the live URL for each topic.",
     "",
-    "Provider API pages are generated on the website and may not exist as markdown in this repo snapshot. For provider-specific resources, use `llms.txt`, the live `https://v2.alchemy.run/providers/...` page, or the upstream source under `packages/alchemy/src/...`.",
+    "Provider API pages are generated on the website. Local provider source references live under `./references/providers/`; for rendered API docs, use `llms.txt` or the live `https://v2.alchemy.run/providers/...` pages.",
     "",
     "```text",
     input.tree,
@@ -234,6 +316,7 @@ type TreeEntry =
 const COLLAPSED_DIRECTORY_DESCRIPTIONS: Record<string, string> = {
   examples: "sample alchemy.run.ts projects and package manifests",
   guides: "task-oriented how-to docs for setup, deployment, integrations, and debugging",
+  providers: "curated upstream provider source for generated API docs",
   tutorial: "linear v2 walkthroughs and provider-specific tutorials",
 };
 

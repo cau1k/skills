@@ -9,7 +9,7 @@ Alchemy v2 is an Infrastructure-as-Effects framework powered by Effect. This ski
 
 Start with `./references/llms.txt` when choosing a page. It is the docs navigation index and names the live URL for each topic.
 
-Provider API pages are generated on the website and may not exist as markdown in this repo snapshot. For provider-specific resources, use `llms.txt`, the live `https://v2.alchemy.run/providers/...` page, or the upstream source under `packages/alchemy/src/...`.
+Provider API pages are generated on the website. Local provider source references live under `./references/providers/`; for rendered API docs, use `llms.txt` or the live `https://v2.alchemy.run/providers/...` pages.
 
 ```text
 ./references/
@@ -34,6 +34,7 @@ Provider API pages are generated on the website and may not exist as markdown in
 │   └── testing.md
 ├── examples/ <- sample alchemy.run.ts projects and package manifests
 ├── guides/ <- task-oriented how-to docs for setup, deployment, integrations, and debugging
+├── providers/ <- curated upstream provider source for generated API docs
 ├── tutorial/ <- linear v2 walkthroughs and provider-specific tutorials
 ├── getting-started.md
 ├── llms.txt

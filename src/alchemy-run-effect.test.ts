@@ -1,10 +1,23 @@
 import { expect, test } from "bun:test";
 
 import {
+  DEFAULT_ALCHEMY_EFFECT_PROVIDERS,
   includeAlchemyRunEffectFile,
+  normalizeAlchemyRunEffectProviders,
   renderAlchemyRunEffectSkillMarkdown,
   renderReferenceTree,
 } from "./alchemy-run-effect.ts";
+
+test("normalizeAlchemyRunEffectProviders uses defaults", () => {
+  expect(normalizeAlchemyRunEffectProviders()).toEqual([...DEFAULT_ALCHEMY_EFFECT_PROVIDERS]);
+});
+
+test("normalizeAlchemyRunEffectProviders dedupes and canonicalizes known providers", () => {
+  expect(normalizeAlchemyRunEffectProviders(["cloudflare", "AWS", "Cloudflare"])).toEqual([
+    "Cloudflare",
+    "AWS",
+  ]);
+});
 
 test("includeAlchemyRunEffectFile excludes non-reference docs", () => {
   const root = "/tmp/docs";
@@ -22,6 +35,7 @@ test("renderReferenceTree collapses broad v2 directories", () => {
       "examples/cloudflare-worker/alchemy.run.ts",
       "guides/ci.md",
       "llms.txt",
+      "providers/Cloudflare/Worker.ts",
       "tutorial/part-1.md",
     ]),
   ).toBe(`./references/
@@ -29,6 +43,7 @@ test("renderReferenceTree collapses broad v2 directories", () => {
 │   └── stack.md
 ├── examples/ <- sample alchemy.run.ts projects and package manifests
 ├── guides/ <- task-oriented how-to docs for setup, deployment, integrations, and debugging
+├── providers/ <- curated upstream provider source for generated API docs
 ├── tutorial/ <- linear v2 walkthroughs and provider-specific tutorials
 └── llms.txt`);
 });

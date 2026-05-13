@@ -4,7 +4,10 @@ import {
   DEFAULT_ALCHEMY_PROVIDERS,
   generateAlchemyRunSkill,
 } from "./src/alchemy-run.ts";
-import { generateAlchemyRunEffectSkill } from "./src/alchemy-run-effect.ts";
+import {
+  DEFAULT_ALCHEMY_EFFECT_PROVIDERS,
+  generateAlchemyRunEffectSkill,
+} from "./src/alchemy-run-effect.ts";
 import { generateCodexAppServerSkill } from "./src/codex-app-server.ts";
 
 type Command = "all" | "alchemy-run" | "alchemy-run-effect" | "codex-app-server";
@@ -20,6 +23,7 @@ const usage = [
   "Usage: bun ./index.ts [all|codex-app-server|alchemy-run|alchemy-run-effect] [--provider <name>] [--providers a,b,c]",
   `Output: ${outputRoot}`,
   `Default alchemy providers: ${DEFAULT_ALCHEMY_PROVIDERS.join(", ")}`,
+  `Default alchemy-effect providers: ${DEFAULT_ALCHEMY_EFFECT_PROVIDERS.join(", ")}`,
 ].join("\n");
 const parsed = parseCliArgs(process.argv.slice(2));
 
@@ -30,7 +34,9 @@ async function main() {
       const alchemy = await generateAlchemyRunSkill(outputRoot, {
         providers: parsed.providers,
       });
-      const alchemyEffect = await generateAlchemyRunEffectSkill(outputRoot);
+      const alchemyEffect = await generateAlchemyRunEffectSkill(outputRoot, {
+        providers: parsed.providers,
+      });
       console.log(`generated ${codex.skillName} -> ${codex.skillDir}`);
       console.log(`generated ${alchemy.skillName} -> ${alchemy.skillDir}`);
       console.log(`generated ${alchemyEffect.skillName} -> ${alchemyEffect.skillDir}`);
@@ -49,7 +55,9 @@ async function main() {
       return;
     }
     case "alchemy-run-effect": {
-      const result = await generateAlchemyRunEffectSkill(outputRoot);
+      const result = await generateAlchemyRunEffectSkill(outputRoot, {
+        providers: parsed.providers,
+      });
       console.log(`generated ${result.skillName} -> ${result.skillDir}`);
       return;
     }

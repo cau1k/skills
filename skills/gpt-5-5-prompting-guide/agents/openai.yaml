@@ -1,0 +1,4 @@
+interface:
+  display_name: "GPT-5.5 Prompting Guide"
+  short_description: "Prompt GPT-5.5 with concise outcome-first patterns"
+  default_prompt: "Use $gpt-5-5-prompting-guide to upgrade this prompt for GPT-5.5."
